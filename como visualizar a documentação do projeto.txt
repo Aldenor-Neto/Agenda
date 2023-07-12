@@ -1,0 +1,7 @@
+Documentação do Projeto:
+
+Link  para fazer testes de requisições:
+localhost:8080/swagger-ui/index.html
+
+Link para acessar o JSON do Projeto:
+localhost:8080/v3/api-docs
