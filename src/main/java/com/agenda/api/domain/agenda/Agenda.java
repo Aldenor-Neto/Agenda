@@ -60,7 +60,7 @@ public class Agenda {
         }
     }
 
-    public void excluir(Agenda agenda) {
+    public void excluir() {
         this.ativo = false;
     }
 

@@ -15,69 +15,50 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.UriComponentsBuilder;
 
-import com.agenda.api.domain.agenda.Agenda;
-import com.agenda.api.domain.agenda.AgendaRepository;
 import com.agenda.api.domain.agenda.DadosAtualizarAgenda;
 import com.agenda.api.domain.agenda.DadosCadastroAgenda;
 import com.agenda.api.domain.agenda.DadosDetalhamentoAgenda;
 import com.agenda.api.domain.agenda.DadosListagemAgenda;
-
-import jakarta.transaction.Transactional;
+import com.agenda.api.service.AgendaService;
 
 @RestController
 @RequestMapping("/agenda")
-
 public class AgendaController {
 
     @Autowired
-    private AgendaRepository repository;
+    private AgendaService service;
 
     @PostMapping
-    @Transactional
-    public ResponseEntity cadastrar(@RequestBody DadosCadastroAgenda dados, UriComponentsBuilder uriBuilder) {
-
-        var agenda = new Agenda(dados);
-        repository.save(agenda);
-
+    public ResponseEntity<DadosDetalhamentoAgenda> cadastrar(@RequestBody DadosCadastroAgenda dados,
+            UriComponentsBuilder uriBuilder) {
+        var agenda = service.saveAgenda(dados);
         var uri = uriBuilder.path("/agenda/{id}").buildAndExpand(agenda.getId()).toUri();
-
         return ResponseEntity.created(uri).body(new DadosDetalhamentoAgenda(agenda));
     }
 
     @GetMapping
     public ResponseEntity<Page<DadosListagemAgenda>> listar(
             @PageableDefault(size = 10, sort = { "nome" }) Pageable paginacao) {
-
-        var page = repository.findAllByAtivoTrue(paginacao).map(DadosListagemAgenda::new);
+        var page = service.findAllActive(paginacao).map(DadosListagemAgenda::new);
         return ResponseEntity.ok(page);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity detalhar(@PathVariable Long id) {
-
-        var agenda = repository.getReferenceById(id);
-
-        return ResponseEntity.ok(new DadosDetalhamentoAgenda(agenda));
+    public ResponseEntity<DadosDetalhamentoAgenda> detalhar(@PathVariable Long id) {
+        return service.findById(id)
+                .map(agenda -> ResponseEntity.ok(new DadosDetalhamentoAgenda(agenda)))
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     @PutMapping
-    @Transactional
-    public ResponseEntity atualizar(@RequestBody DadosAtualizarAgenda dados) {
-
-        var agenda = repository.getReferenceById(dados.id());
-        agenda.atualizarDados(dados);
-
+    public ResponseEntity<DadosDetalhamentoAgenda> atualizar(@RequestBody DadosAtualizarAgenda dados) {
+        var agenda = service.updateAgenda(dados);
         return ResponseEntity.ok(new DadosDetalhamentoAgenda(agenda));
     }
 
     @DeleteMapping("/{id}")
-    @Transactional
-    public ResponseEntity excluir(@PathVariable Long id) {
-
-        var agenda = repository.getReferenceById(id);
-        agenda.excluir(agenda);
-
+    public ResponseEntity<Void> excluir(@PathVariable Long id) {
+        service.deleteAgenda(id);
         return ResponseEntity.noContent().build();
     }
-
 }
